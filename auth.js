@@ -97,7 +97,7 @@
         go.disabled = false;
         if (j.ok && j.must) { showChange(box, j, i1.value.trim()); return; }
         if (j.ok) { finish(j); return; }
-        er.textContent = j.error === "locked" ? "Слишком много попыток. Вход заблокирован на 15 минут." : j.error === "bad" ? "Неверный логин или пароль" : "Ошибка: " + (j.error || "нет связи");
+        er.textContent = j.error === "locked" ? "Слишком много попыток. Вход заблокирован на 15 минут." : j.error === "bad" ? "Неверный логин или пароль" : j.error === "rate" ? "Слишком много попыток со стороны. Подождите 10 минут и повторите." : "Ошибка: " + (j.error || "нет связи");
       }).catch(function () { go.disabled = false; er.textContent = "Нет связи. Проверьте интернет и повторите."; });
     }
     i1.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); i2.focus(); } });
@@ -106,7 +106,7 @@
   function showChange(box, j, lg) {
     box.innerHTML = "";
     box.appendChild(mk("h2", "Задайте свой пароль"));
-    box.appendChild(mk("p", "Вы вошли с временным паролем. Придумайте свой: не короче 10 символов, буквы и цифры."));
+    box.appendChild(mk("p", "Вы вошли с временным паролем. Придумайте свой: не короче 12 символов, буквы и цифры (без «password», «qwerty», названия компании и вашего логина)."));
     var l1 = mk("label", "Новый пароль"), i1 = mk("input", null, { type: "password", autocomplete: "new-password" });
     var l2 = mk("label", "Повторите пароль"), i2 = mk("input", null, { type: "password", autocomplete: "new-password" });
     var un = mk("input", null, { type: "text", name: "username", autocomplete: "username", value: lg || "" }); un.style.display = "none";
@@ -116,14 +116,14 @@
     fm.addEventListener("submit", function (e) { e.preventDefault(); submit(); });
     function submit() {
       var p = i1.value;
-      if (p.length < 10) { er.textContent = "Пароль короче 10 символов"; return; }
-      if (!/[0-9]/.test(p) || !/[A-Za-zА-Яа-яЁё]/.test(p)) { er.textContent = "Нужны и буквы, и цифры"; return; }
+      if (p.length < 12) { er.textContent = "Пароль короче 12 символов"; return; }
+      if (!/[0-9]/.test(p) || !/[A-Za-zА-Яа-яЁё]/.test(p)) { er.textContent = "Слишком простой пароль: нужны буквы и цифры, без «password», «qwerty», названия компании и логина"; return; }
       if (p !== i2.value) { er.textContent = "Пароли не совпадают"; return; }
       go.disabled = true; er.textContent = "";
       post({ a: "chpass", t: j.token, p: p }).then(function (r) {
         go.disabled = false;
         if (r.ok) { finish(r); return; }
-        er.textContent = r.error === "short" ? "Пароль короче 10 символов" : r.error === "weak" ? "Нужны и буквы, и цифры" : "Ошибка: " + (r.error || "нет связи");
+        er.textContent = r.error === "short" ? "Пароль короче 12 символов" : r.error === "weak" ? "Слишком простой пароль: нужны буквы и цифры, без «password», «qwerty», названия компании и логина" : "Ошибка: " + (r.error || "нет связи");
       }).catch(function () { go.disabled = false; er.textContent = "Нет связи. Повторите."; });
     }
     setTimeout(function () { try { i1.focus(); } catch (e) {} }, 50);

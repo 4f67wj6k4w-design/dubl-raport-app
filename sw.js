@@ -1,6 +1,6 @@
 /* Фоновый модуль приложения ГК КРАШМАШ: хранит страницы, чтобы они открывались без интернета.
    Данные (запросы к серверу Google) НЕ кэшируются — они всегда идут напрямую. */
-var VER = "krm-v2-2";
+var VER = "krm-v2-3";
 var SHELL = ["./index.html", "./dsk.html", "./director.html", "./exec.html", "./auth.js", "./pwa.js", "./config.js", "./dostup.html",
   "./tema.css", "./tema.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", function (e) {
@@ -17,7 +17,9 @@ self.addEventListener("fetch", function (e) {
   var req = e.request, url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== self.location.origin) return; // сервер Google, шрифты — мимо
   // сначала сеть (свежая версия), без сети — сохранённая копия
-  e.respondWith(fetch(req).then(function (res) {
+  // при слабом сигнале не ждём сеть дольше 4 секунд: открываем сохранённую копию
+  var net = Promise.race([fetch(req), new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 4000); })]);
+  e.respondWith(net.then(function (res) {
     if (res && res.ok) { var cp = res.clone(); caches.open(VER).then(function (c) { c.put(req, cp); }); }
     return res;
   }).catch(function () {
